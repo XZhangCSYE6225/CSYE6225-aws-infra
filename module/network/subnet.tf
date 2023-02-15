@@ -5,7 +5,7 @@ resource "aws_subnet" "public_subnet" {
   cidr_block        = cidrsubnet(var.public_route_cidr, 4, count.index)
 
   tags = {
-    Name = "public-subnet-${count.index + 0}"
+    Name = "${var.vpc_name}-public-subnet-${count.index + 0}"
   }
 }
 
@@ -16,7 +16,7 @@ resource "aws_subnet" "private_subnet" {
   cidr_block        = cidrsubnet(var.private_route_cidr, 4, count.index)
 
   tags = {
-    Name = "private-subnet-${count.index + 0}"
+    Name = "${var.vpc_name}-private-subnet-${count.index + 0}"
   }
 }
 
