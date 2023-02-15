@@ -8,6 +8,10 @@ variable "profile" {
   default = "dev"
 }
 
+variable "vpc_name" {
+  type = string
+}
+
 variable "aval_zone" {
   type    = list(string)
   default = ["d", "e", "f"]
