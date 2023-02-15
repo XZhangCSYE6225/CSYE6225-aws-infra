@@ -13,6 +13,10 @@ variable "aval_zone" {
   default = ["d", "e", "f"]
 }
 
+variable "vpc_name" {
+  type = string
+}
+
 variable "length" {
   type    = number
   default = 3

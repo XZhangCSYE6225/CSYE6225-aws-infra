@@ -7,7 +7,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "public-route-table"
+    Name = "${var.vpc_name}-public-route-table"
   }
 }
 
@@ -17,6 +17,6 @@ resource "aws_default_route_table" "private" {
   route = []
 
   tags = {
-    Name = "private-route-table"
+    Name = "${var.vpc_name}-private-route-table"
   }
 }
