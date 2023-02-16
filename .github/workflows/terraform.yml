@@ -1,4 +1,4 @@
-name: Check terraform file formatting
+name: Check terraform 
 
 on:
   pull_request:
@@ -16,3 +16,6 @@ jobs:
         uses: dflook/terraform-fmt-check@v1
         with:
           path: ../../
+      
+      - name: terraform validate
+        run: terraform 
