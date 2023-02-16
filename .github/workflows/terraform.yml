@@ -1,13 +1,12 @@
-name: Check terraform 
+name: Check_terraform 
 
 on:
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  check_format:
+  Check_terraform:
     runs-on: ubuntu-latest
-    name: Check terraform file are formatted correctly
     steps:
       - name: Checkout
         uses: actions/checkout@v3
