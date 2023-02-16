@@ -7,7 +7,7 @@ variable "name" {
 }
 
 variable "profile" {
-  type    = string
+  type = string
 }
 
 variable "cidr_block" {
