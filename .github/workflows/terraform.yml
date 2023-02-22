@@ -1,4 +1,4 @@
-name: Check-terraform 
+name: Terraform
 
 on:
   pull_request:
@@ -11,11 +11,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
 
       - name: terraform fmt
-        uses: dflook/terraform-fmt-check@v1
-        with:
-          path: ../../
+        run: terraform fmt -check
       
       - name: terraform init
         run: terraform init

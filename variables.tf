@@ -13,3 +13,11 @@ variable "profile" {
 variable "cidr_block" {
   type = string
 }
+
+variable "key_name" {
+  type = string
+}
+
+variable "public_key" {
+  type = string
+}
