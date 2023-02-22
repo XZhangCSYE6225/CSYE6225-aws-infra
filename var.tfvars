@@ -1,0 +1,11 @@
+vpc_region = "us-east-1"
+
+name = "vpc"
+
+profile = "demo"
+
+cidr_block = "10.0.0.0/16"
+
+key_name = "ec2-instance"
+
+public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCZ1asctepQv3nOAH9fxxTFxnzoIwI/cdB979cOgrqT+QOPKMvzoVs5D0+xjuAjnOSG3JY/eZLxAzfQl9BUwd6rkcHApfQpn6YI/pzcwx6Sz479+obh8SpvMP5P+2ugDPQ9mOlFXaikhtkLuBSzCdh+/CrgcW7+8KvLsooJXMszplkHlabFbsCTkC4wUA6CgQwfHZup6JTwpNGNpX5grGy3FwEd4GJT6Q3qlylfIIBhfMk76zyu9hKk6z4kcy71rVV7VSYscDaycMj9t/MhhQyuZmKGBX8IT4jCryQcsLOjEgJaYbfAkEQKNyMVQxYOhmcuRqhE3jJBmYXiSZfXw7yWkR4D2WDfDDxRdgdp7sKSJyDnc57FfUKbyx9HMNGGJAD3uW+rXbrxp9NiNvDhA1F9mduzWfhHHLTPdvx/4NlvebGBGPpxFmdqd2Ym7aseicE0LTtlGI06//jZ3SIVnDLBwCLOUHl3YY6UB3CoYIescUqAf9qCpwV89fw+GE4h+f0= zhangxiao@XERICZHANG-MB0"
