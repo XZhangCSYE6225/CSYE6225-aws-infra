@@ -60,13 +60,13 @@ resource "aws_security_group" "webapp_sg" {
   }
 }
 
-resource "aws_key_pair" "ec2" {
-  key_name   = var.key_name
-  public_key = var.public_key
-}
+# resource "aws_key_pair" "ec2" {
+#   key_name   = var.key_name
+#   public_key = var.public_key
+# }
 
 data "aws_ami" "webapp" {
-  name_regex  = "webapp-*"
+  name_regex  = "webapp-ami-*"
   most_recent = true
 }
 
@@ -86,6 +86,6 @@ resource "aws_instance" "webapp" {
   }
 
   tags = {
-    Name = "webapp_instance"
+    Name = "webapp-ec2"
   }
 }
