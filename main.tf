@@ -72,7 +72,7 @@ data "aws_ami" "webapp" {
 
 resource "aws_instance" "webapp" {
   ami                         = data.aws_ami.webapp.id
-  instance_type               = "t2.micro"
+  instance_type               = var.instance_type
   vpc_security_group_ids      = [aws_security_group.webapp_sg.id]
   key_name                    = var.key_name
   subnet_id                   = module.mynetwork.public_subnets.*.id[0]
@@ -81,8 +81,8 @@ resource "aws_instance" "webapp" {
 
   root_block_device {
     delete_on_termination = true
-    volume_size           = 50
-    volume_type           = "gp2"
+    volume_size           = var.volume_size
+    volume_type           = var.volume_type
   }
 
   tags = {

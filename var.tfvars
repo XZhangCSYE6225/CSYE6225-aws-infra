@@ -7,3 +7,9 @@ profile = "demo"
 cidr_block = "10.0.0.0/16"
 
 key_name = "ec2"
+
+instance_type = "t2.micro"
+
+volume_size = 50
+
+volume_type = "gp2"

@@ -17,3 +17,15 @@ variable "cidr_block" {
 variable "key_name" {
   type = string
 }
+
+variable "instance_type" {
+  type = string
+}
+
+variable "volume_size" {
+  type = number
+}
+
+variable "volume_type" {
+  type = string
+}
