@@ -29,3 +29,7 @@ variable "volume_size" {
 variable "volume_type" {
   type = string
 }
+
+variable "ami_id" {
+  type = string
+}
