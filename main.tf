@@ -70,8 +70,12 @@ data "aws_ami" "webapp" {
   most_recent = true
 }
 
+locals {
+  ami_id = var.ami_id == "" ? data.aws_ami.webapp.id : var.ami_id
+}
+
 resource "aws_instance" "webapp" {
-  ami                         = data.aws_ami.webapp.id
+  ami                         = local.ami_id
   instance_type               = var.instance_type
   vpc_security_group_ids      = [aws_security_group.webapp_sg.id]
   key_name                    = var.key_name
