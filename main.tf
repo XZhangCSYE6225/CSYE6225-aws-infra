@@ -86,9 +86,12 @@ resource "aws_db_instance" "csye6225" {
   instance_class         = "db.t3.micro"
   username               = "csye6225"
   password               = "Zx991115!"
+  publicly_accessible    = false
   vpc_security_group_ids = [aws_security_group.database_sg.id]
+  parameter_group_name   = aws_db_parameter_group.mysql.name
   db_subnet_group_name   = aws_db_subnet_group.private.name
   skip_final_snapshot    = true
+  multi_az               = false
 
   tags = {
     Name = "csye6225"
@@ -97,6 +100,7 @@ resource "aws_db_instance" "csye6225" {
 
 resource "aws_s3_bucket" "s3_bucket" {
   bucket_prefix = "my-webapp-bucket-"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_public_access_block" "block" {
@@ -149,7 +153,9 @@ resource "aws_iam_policy" "WebAppS3" {
     "Statement" : [
       {
         "Action" : [
-          "s3:*"
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
         ],
         "Effect" : "Allow",
         "Resource" : [
