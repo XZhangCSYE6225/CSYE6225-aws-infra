@@ -54,7 +54,6 @@ resource "aws_security_group" "database_sg" {
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
-    cidr_blocks     = ["0.0.0.0/0"]
     security_groups = [aws_security_group.webapp_sg.id]
   }
 
