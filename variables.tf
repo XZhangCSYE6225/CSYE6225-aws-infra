@@ -33,3 +33,15 @@ variable "volume_type" {
 variable "ami_id" {
   type = string
 }
+
+variable "db_password" {
+  type = string
+}
+
+variable "zone_id" {
+  type = string
+}
+
+variable "subdoumain_prefix" {
+  type = string
+}
