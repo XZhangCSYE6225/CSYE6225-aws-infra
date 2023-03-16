@@ -84,7 +84,7 @@ resource "aws_db_instance" "csye6225" {
   engine_version         = "8.0"
   instance_class         = "db.t3.micro"
   username               = "csye6225"
-  password               = "Zx991115!"
+  password               = var.db_password
   publicly_accessible    = false
   vpc_security_group_ids = [aws_security_group.database_sg.id]
   parameter_group_name   = aws_db_parameter_group.mysql.name
@@ -129,7 +129,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "s3_bucket_lifecycle" {
     status = "Enabled"
 
     transition {
-      days          = 60
+      days          = 30
       storage_class = "STANDARD_IA"
     }
   }
@@ -227,4 +227,12 @@ resource "aws_instance" "webapp" {
   tags = {
     Name = "webapp-ec2"
   }
+}
+
+resource "aws_route53_record" "webapp_record" {
+  zone_id = var.zone_id
+  name    = "${var.subdoumain_prefix}.xiaozhang99.me"
+  records = [aws_instance.webapp.public_ip]
+  type    = "A"
+  ttl     = 60
 }
