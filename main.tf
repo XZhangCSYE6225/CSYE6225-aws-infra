@@ -7,7 +7,7 @@ module "mynetwork" {
 }
 
 resource "aws_security_group" "webapp_sg" {
-  name        = "app_sg"
+  name        = "webapp_sg"
   description = "allow on port 22 80 443 8080"
   vpc_id      = module.mynetwork.vpc.id
 
@@ -49,6 +49,7 @@ resource "aws_security_group" "webapp_sg" {
 
 resource "aws_security_group" "database_sg" {
   vpc_id = module.mynetwork.vpc.id
+  name   = "database_sg"
 
   ingress {
     from_port       = 3306
@@ -186,9 +187,14 @@ resource "aws_iam_role" "EC2-CSYE6225" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "attachment" {
+resource "aws_iam_role_policy_attachment" "S3Attachment" {
   role       = aws_iam_role.EC2-CSYE6225.name
   policy_arn = aws_iam_policy.WebAppS3.arn
+}
+
+resource "aws_iam_role_policy_attachment" "CWAttachment" {
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+  role       = aws_iam_role.EC2-CSYE6225.name
 }
 
 resource "aws_iam_instance_profile" "profile" {
@@ -216,6 +222,13 @@ resource "aws_instance" "webapp" {
     echo "AWS_BUCKET_NAME=${aws_s3_bucket.s3_bucket.bucket}" >> /home/ec2-user/.env
     echo "AWS_BUCKET_REGION=${var.vpc_region}" >> /home/ec2-user/.env
     mv /home/ec2-user/.env /home/ec2-user/webapp/.env
+    sudo ln -s /home/ec2-user/webapp/logs/app.log /var/log/webapp/app.log
+    sleep 10
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+    -a fetch-config \
+    -m ec2 \
+    -c file:/opt/config.json \
+    -s
   EOF
 
   root_block_device {
