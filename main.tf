@@ -8,26 +8,38 @@ module "mynetwork" {
 
 resource "aws_security_group" "webapp_sg" {
   name        = "webapp_sg"
-  description = "allow on port 22 80 443 8080"
+  description = "allow on port 80 8080"
   vpc_id      = module.mynetwork.vpc.id
 
   ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.webapp_lb_sg.id]
+  }
+
+  ingress {
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.webapp_lb_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+resource "aws_security_group" "webapp_lb_sg" {
+  name   = "lb_sg"
+  vpc_id = module.mynetwork.vpc.id
 
   ingress {
     from_port   = 80
     to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -202,17 +214,8 @@ resource "aws_iam_instance_profile" "profile" {
   role = aws_iam_role.EC2-CSYE6225.name
 }
 
-resource "aws_instance" "webapp" {
-  ami                         = local.ami_id
-  instance_type               = var.instance_type
-  vpc_security_group_ids      = [aws_security_group.webapp_sg.id]
-  key_name                    = var.key_name
-  subnet_id                   = module.mynetwork.public_subnets.*.id[0]
-  iam_instance_profile        = aws_iam_instance_profile.profile.name
-  disable_api_termination     = false
-  associate_public_ip_address = true
-
-  user_data = <<EOF
+data "template_file" "userdata" {
+  template = <<EOF
     #!/bin/bash
     echo "DATABASE_HOST=${replace(aws_db_instance.csye6225.endpoint, "/:.*/", "")}" >> /home/ec2-user/.env
     echo "DATABASE_NAME=${aws_db_instance.csye6225.db_name}" >> /home/ec2-user/.env
@@ -229,23 +232,138 @@ resource "aws_instance" "webapp" {
     -m ec2 \
     -c file:/opt/config.json \
     -s
-  EOF
+    EOF
+}
 
-  root_block_device {
-    delete_on_termination = true
-    volume_size           = var.volume_size
-    volume_type           = var.volume_type
+resource "aws_launch_template" "webapp_lt" {
+  name                    = "asg_launch_config"
+  image_id                = local.ami_id
+  instance_type           = var.instance_type
+  key_name                = var.key_name
+  user_data               = base64encode(data.template_file.userdata.rendered)
+  disable_api_termination = false
+  network_interfaces {
+    associate_public_ip_address = true
+    delete_on_termination       = true
+    security_groups             = [aws_security_group.webapp_sg.id]
   }
 
+  iam_instance_profile {
+    name = aws_iam_instance_profile.profile.name
+  }
+}
+
+resource "aws_autoscaling_group" "webapp_asg" {
+  name             = "csye6225-asg-spring2023"
+  desired_capacity = 1
+  max_size         = 3
+  min_size         = 1
+  default_cooldown = 60
+  launch_template {
+    id      = aws_launch_template.webapp_lt.id
+    version = "$Latest"
+  }
+  vpc_zone_identifier = module.mynetwork.public_subnets.*.id
+  target_group_arns   = [aws_lb_target_group.alb_tg.arn]
+  tag {
+    key                 = "Name"
+    value               = "webapp-asg"
+    propagate_at_launch = true
+  }
+}
+
+resource "aws_autoscaling_policy" "scale_up" {
+  name                   = "scale_up_policy"
+  cooldown               = 120
+  autoscaling_group_name = aws_autoscaling_group.webapp_asg.name
+  adjustment_type        = "ChangeInCapacity"
+  scaling_adjustment     = 1
+  policy_type            = "SimpleScaling"
+}
+
+resource "aws_autoscaling_policy" "scale_down" {
+  name                   = "scale_down_policy"
+  cooldown               = 120
+  autoscaling_group_name = aws_autoscaling_group.webapp_asg.name
+  adjustment_type        = "ChangeInCapacity"
+  scaling_adjustment     = -1
+  policy_type            = "SimpleScaling"
+}
+
+resource "aws_cloudwatch_metric_alarm" "scale_down_alarm" {
+  alarm_name          = "scale_down_alarm"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = "3"
+  alarm_actions       = [aws_autoscaling_policy.scale_down.arn]
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.webapp_asg.name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "scale_up_alarm" {
+  alarm_name          = "scale_up_alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = "5"
+  alarm_actions       = [aws_autoscaling_policy.scale_up.arn]
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.webapp_asg.name
+  }
+}
+
+resource "aws_lb" "webapp_lb" {
+  name               = "csye6225-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.webapp_lb_sg.id]
+  subnets            = module.mynetwork.public_subnets.*.id
+
   tags = {
-    Name = "webapp-ec2"
+    Application = "WebApp"
+  }
+}
+
+resource "aws_lb_target_group" "alb_tg" {
+  name     = "webapp-tg"
+  port     = 8080
+  protocol = "HTTP"
+  vpc_id   = module.mynetwork.vpc.id
+
+  health_check {
+    path     = "/healthz"
+    port     = "8080"
+    protocol = "HTTP"
+  }
+}
+
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = aws_lb.webapp_lb.arn
+  protocol          = "HTTP"
+  port              = 80
+
+  default_action {
+    target_group_arn = aws_lb_target_group.alb_tg.arn
+    type             = "forward"
   }
 }
 
 resource "aws_route53_record" "webapp_record" {
   zone_id = var.zone_id
   name    = "${var.subdoumain_prefix}.xiaozhang99.me"
-  records = [aws_instance.webapp.public_ip]
   type    = "A"
-  ttl     = 60
+
+  alias {
+    name                   = aws_lb.webapp_lb.dns_name
+    zone_id                = aws_lb.webapp_lb.zone_id
+    evaluate_target_health = true
+  }
 }
