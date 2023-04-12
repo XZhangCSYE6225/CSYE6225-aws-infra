@@ -78,6 +78,87 @@ resource "aws_security_group" "database_sg" {
   }
 }
 
+resource "aws_kms_key" "db_key" {
+  description = "kms key for db"
+
+}
+
+resource "aws_kms_key" "ebs_key" {
+  description = "kms key for ebs"
+  policy = jsonencode({
+    "Id" : "key-consolepolicy-3",
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "Enable IAM User Permissions",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::855056001575:root"
+        },
+        "Action" : "kms:*",
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "Allow access for Key Administrators",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::855056001575:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+        },
+        "Action" : [
+          "kms:Create*",
+          "kms:Describe*",
+          "kms:Enable*",
+          "kms:List*",
+          "kms:Put*",
+          "kms:Update*",
+          "kms:Revoke*",
+          "kms:Disable*",
+          "kms:Get*",
+          "kms:Delete*",
+          "kms:TagResource",
+          "kms:UntagResource",
+          "kms:ScheduleKeyDeletion",
+          "kms:CancelKeyDeletion"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "Allow use of the key",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::855056001575:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+        },
+        "Action" : [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "Allow attachment of persistent resources",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::855056001575:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+        },
+        "Action" : [
+          "kms:CreateGrant",
+          "kms:ListGrants",
+          "kms:RevokeGrant"
+        ],
+        "Resource" : "*",
+        "Condition" : {
+          "Bool" : {
+            "kms:GrantIsForAWSResource" : "true"
+          }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_db_subnet_group" "private" {
   name       = "private-subnets-group"
   subnet_ids = module.mynetwork.private_subnets.*.id
@@ -104,7 +185,8 @@ resource "aws_db_instance" "csye6225" {
   db_subnet_group_name   = aws_db_subnet_group.private.name
   skip_final_snapshot    = true
   multi_az               = false
-
+  storage_encrypted      = true
+  kms_key_id             = aws_kms_key.db_key.arn
   tags = {
     Name = "csye6225"
   }
@@ -251,6 +333,15 @@ resource "aws_launch_template" "webapp_lt" {
   iam_instance_profile {
     name = aws_iam_instance_profile.profile.name
   }
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      encrypted  = true
+      kms_key_id = aws_kms_key.ebs_key.arn
+    }
+  }
 }
 
 resource "aws_autoscaling_group" "webapp_asg" {
@@ -347,8 +438,10 @@ resource "aws_lb_target_group" "alb_tg" {
 
 resource "aws_lb_listener" "front_end" {
   load_balancer_arn = aws_lb.webapp_lb.arn
-  protocol          = "HTTP"
-  port              = 80
+  protocol          = "HTTPS"
+  port              = 443
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "arn:aws:acm:us-east-1:855056001575:certificate/1221690e-e138-433b-890f-db7f55cd9866"
 
   default_action {
     target_group_arn = aws_lb_target_group.alb_tg.arn

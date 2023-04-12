@@ -35,3 +35,11 @@ terraform init && terraform plan
 ```sh
 terraform apply
 ```
+
+## The command to import the certificate
+```sh
+aws --profile demo --region us-east-1 acm import-certificate \
+--certificate fileb://prod_xiaozhang99_me.crt \
+--certificate-chain fileb://prod_xiaozhang99_me.ca-bundle \
+--private-key fileb://private.pem     
+```
