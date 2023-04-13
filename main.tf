@@ -83,6 +83,8 @@ resource "aws_kms_key" "db_key" {
 
 }
 
+data "aws_caller_identity" "current" {}
+
 resource "aws_kms_key" "ebs_key" {
   description = "kms key for ebs"
   policy = jsonencode({
@@ -93,7 +95,7 @@ resource "aws_kms_key" "ebs_key" {
         "Sid" : "Enable IAM User Permissions",
         "Effect" : "Allow",
         "Principal" : {
-          "AWS" : "arn:aws:iam::855056001575:root"
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         },
         "Action" : "kms:*",
         "Resource" : "*"
@@ -102,7 +104,7 @@ resource "aws_kms_key" "ebs_key" {
         "Sid" : "Allow access for Key Administrators",
         "Effect" : "Allow",
         "Principal" : {
-          "AWS" : "arn:aws:iam::855056001575:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
         },
         "Action" : [
           "kms:Create*",
@@ -126,7 +128,7 @@ resource "aws_kms_key" "ebs_key" {
         "Sid" : "Allow use of the key",
         "Effect" : "Allow",
         "Principal" : {
-          "AWS" : "arn:aws:iam::855056001575:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
         },
         "Action" : [
           "kms:Encrypt",
@@ -141,7 +143,7 @@ resource "aws_kms_key" "ebs_key" {
         "Sid" : "Allow attachment of persistent resources",
         "Effect" : "Allow",
         "Principal" : {
-          "AWS" : "arn:aws:iam::855056001575:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
         },
         "Action" : [
           "kms:CreateGrant",
